@@ -4,10 +4,19 @@ from collections import Counter
 from collections import defaultdict
 from five.intid.intid import addIntIdSubscriber
 from plone import api
-from plone.app.iterate.dexterity import ITERATE_RELATION_NAME
-from plone.app.iterate.dexterity.relation import StagingRelationValue
-from plone.app.linkintegrity.handlers import modifiedContent
-from plone.app.linkintegrity.utils import referencedRelationship
+try:
+    from plone.app.iterate.dexterity import ITERATE_RELATION_NAME
+    from plone.app.iterate.dexterity.relation import StagingRelationValue
+except ImportError:
+    from plone.app.stagingbehavior import STAGING_RELATION_NAME as ITERATE_RELATION_NAME
+    from plone.app.stagingbehavior.relation import StagingRelationValue
+try:
+    from plone.app.linkintegrity.handlers import modifiedContent
+    from plone.app.linkintegrity.utils import referencedRelationship
+except ImportError:
+    def modifiedContent(*args, **kwargs):
+        pass
+    referencedRelationship = object()
 from plone.app.relationfield.event import update_behavior_relations
 from plone.app.uuid.utils import uuidToObject
 from plone.dexterity.interfaces import IDexterityContent
@@ -56,7 +65,7 @@ class InspectRelationsControlpanel(BrowserView):
 
         self.relations = []
         self.relations_stats, self.broken = get_relations_stats()
-        view_action = api.portal.get_registry_record('plone.types_use_view_action_in_listings')
+        view_action = api.portal.get_registry_record('plone.types_use_view_action_in_listings', default=[])
 
         if not self.relation:
             api.portal.show_message(u'Please select a relation', self.request)
